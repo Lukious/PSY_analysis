@@ -1,0 +1,2 @@
+ loss 589.2556 - mean_squared_error 589.2556 - mean_absolute_percentage_error 100.0000
+테스트 세트의 평균 절대 오차 589.26 decision

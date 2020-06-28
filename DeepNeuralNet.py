@@ -16,12 +16,24 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from keras.layers import Dense, Dropout, Activation
+from keras.models import Sequential
+
+from keras.optimizers import SGD
+from keras.optimizers import adam
+from keras import metrics
+
+from sklearn.metrics import r2_score
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.optimizers import RMSprop
+
+from tensorflow.keras.layers import Conv2D, Flatten, MaxPooling2D, Dropout, BatchNormalization
 
 print(tf.__version__)
 
@@ -40,17 +52,24 @@ def Preprocessing(data):
 
 
 def build_model():
-  model = keras.Sequential([
-    layers.Dense(64, activation='relu', input_shape=[len(train_dataset.keys())+1]),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(1)
+  model = tf.keras.Sequential([
+    layers.Dense(32, kernel_initializer='normal', activation = "relu", input_shape=(4,)), 
+    layers.Dense(256, kernel_initializer='normal', activation = "relu"),
+    layers.Dense(512, kernel_initializer='normal', activation = "relu"),
+    layers.Dense(512, kernel_initializer='normal', activation = "relu"),
+    layers.Dense(512, kernel_initializer='normal', activation = "relu"),
+    layers.Dense(64, kernel_initializer='normal', activation = "relu"),
+    layers.Dense(1, kernel_initializer='normal', activation = "relu"), 
+
   ])
 
-  optimizer = tf.keras.optimizers.RMSprop(0.001)
+  #optimizer = tf.keras.optimizers.RMSprop(0.001)
+  #opt = adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+  opt = RMSprop(lr=0.0001, decay=1e-6)
 
-  model.compile(loss='mse',
-                optimizer=optimizer,
-                metrics=['mae', 'mse'])
+  model.compile(loss='mean_squared_error', 
+              optimizer=opt, 
+              metrics=[metrics.mse, metrics.mean_absolute_percentage_error])
   return model
 
 
@@ -62,19 +81,19 @@ def plot_history(history):
     plt.subplot(2,1,1)
     plt.xlabel('Epoch')
     plt.ylabel('Mean Abs Error [decision]')
-    plt.plot(hist['epoch'], hist['mae'],label='Train Error')
-    plt.plot(hist['epoch'], hist['val_mae'],label = 'Val Error')
+    plt.plot(hist['epoch'], hist['mean_squared_error'],label='Train Error')
+    plt.plot(hist['epoch'], hist['val_mean_squared_error'],label = 'Val Error')
     plt.ylim([0,5])
     plt.legend()
     plt.subplot(2,1,2)
     plt.xlabel('Epoch')
     plt.ylabel('Mean Square Error [$decision^2$]')
-    plt.plot(hist['epoch'], hist['mse'],label='Train Error')
-    plt.plot(hist['epoch'], hist['val_mse'],label = 'Val Error')
+    plt.plot(hist['epoch'], hist['mean_squared_error'],label='Train Error')
+    plt.plot(hist['epoch'], hist['val_mean_squared_error'],label = 'Val Error')
     plt.ylim([0,20])
     plt.legend()
     # plt.show()
-    plt.savefig('./simple_model/MSEnMAE.png', dpi=300)
+    plt.savefig('./DeepNet/MSEnMAE.png', dpi=300)
     
 if __name__ == '__main__': 
     
@@ -93,7 +112,7 @@ if __name__ == '__main__':
     test_dataset = label.drop(train_dataset.index)
     
     sns_plot  = sns.pairplot(train_dataset[['decision','age','round','decision_time']], diag_kind="kde")
-    sns_plot.savefig("./simple_model/pairplot.png")
+    sns_plot.savefig("./DeepNet/pairplot.png")
 
     train_stats = train_dataset.describe()
     train_stats.pop("decision")
@@ -119,6 +138,7 @@ if __name__ == '__main__':
     '''
     
     model = build_model()
+    
     model.summary()
     
     example_batch = normed_train_data[:10]
@@ -138,9 +158,10 @@ if __name__ == '__main__':
     
     print("Training!")
     
-    history = model.fit(
-    normed_train_data, train_labels,
-    epochs=EPOCHS, validation_split = 0.2, verbose=0,callbacks=[PrintDot()])
+    history = model.fit(normed_train_data, train_labels, epochs=EPOCHS, batch_size=10, validation_split=0.2, verbose=0,callbacks=[PrintDot()])
+    
+    print(r2_score(train_labels, model.predict(normed_train_data)))
+
     
     hist = pd.DataFrame(history.history)
     hist['epoch'] = history.epoch
@@ -150,6 +171,30 @@ if __name__ == '__main__':
     plot_history(history)
     '''
     
+    ##############################PLOT###############################
+    '''
+    plt.figure(figsize=(12, 4))
+    plt.scatter(normed_train_data, train_labels, alpha=0.7, label='y_true')
+    plt.scatter(normed_train_data, model.predict(normed_train_data), alpha=0.7, label='y_pred')
+    plt.legend()
+    plt.savefig('./DeepNet/MSEnMAE.png')
+    plt.show()
+    '''
+    history.history.keys()
+    
+    val_loss_lst = history.history['val_loss']
+    train_loss_lst = history.history['loss']
+    
+    plt.figure(figsize=(12, 4))
+    plt.plot(range(0, len(val_loss_lst)), val_loss_lst, label='val_loss')
+    plt.plot(range(0, len(train_loss_lst)), train_loss_lst, label='train_loss')
+    plt.legend()
+    plt.savefig('./DeepNet/MSEnMAE.png')
+    plt.show()
+    ##############################PLOT###############################
+
+    
+    
     ##############################HISTORY###############################
     hist = pd.DataFrame(history.history)
     hist['epoch'] = history.epoch
@@ -158,22 +203,22 @@ if __name__ == '__main__':
     plt.subplot(2,1,1)
     plt.xlabel('Epoch')
     plt.ylabel('Mean Abs Error [decision]')
-    plt.plot(hist['epoch'], hist['mae'],label='Train Error')
-    plt.plot(hist['epoch'], hist['val_mae'],label = 'Val Error')
+    plt.plot(hist['epoch'], hist['mean_squared_error'],label='Train Error')
+    plt.plot(hist['epoch'], hist['val_mean_squared_error'],label = 'Val Error')
     plt.ylim([0,5])
     plt.legend()
     plt.subplot(2,1,2)
     plt.xlabel('Epoch')
     plt.ylabel('Mean Square Error [$decision^2$]')
-    plt.plot(hist['epoch'], hist['mse'],label='Train Error')
-    plt.plot(hist['epoch'], hist['val_mse'],label = 'Val Error')
+    plt.plot(hist['epoch'], hist['mean_squared_error'],label='Train Error')
+    plt.plot(hist['epoch'], hist['val_mean_squared_error'],label = 'Val Error')
     plt.ylim([0,20])
     plt.legend()
     # plt.show()
-    plt.savefig('./simple_model/MSEnMAE.png', dpi=300)
+    plt.savefig('./DeepNet/MSEnMAE.png', dpi=300)
     ##############################HISTORY###############################
 
-    hist.to_csv('./simple_model/hist_simple_model.csv',sep=',')
+    hist.to_csv('./DeepNet/hist_DeepNet.csv',sep=',')
     loss, mae, mse  = model.evaluate(normed_test_data, test_labels, verbose=2)
     print("테스트 세트의 평균 절대 오차: {:5.2f} decision".format(mae))
 
@@ -194,4 +239,4 @@ if __name__ == '__main__':
     plt.xlabel("Prediction Error [decision]")
     _ = plt.ylabel("Count")
     # plt.show()
-    plt.savefig('./simple_model/Predictions.png', dpi=300)
+    plt.savefig('./DeepNet/Predictions.png', dpi=300)
