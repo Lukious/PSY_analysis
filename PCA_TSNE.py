@@ -49,7 +49,9 @@ if __name__ == '__main__':
     digits_tsne = tsne.fit_transform(X_scaled)
     plt.scatter(digits_tsne[:,0],digits_tsne[:,1])
     plt.show()
-    '''
+    
+    
+    #RG#1
     linear_regression = linear_model.LinearRegression()
     linear_regression.fit(X=pd.DataFrame(data["decision"]), y= data["decision_time"])
     prediction = linear_regression.predict(X=pd.DataFrame(data["decision"]))
@@ -71,8 +73,11 @@ if __name__ == '__main__':
     print('score: ', linear_regression.score(X=pd.DataFrame(data["decision"]), y=data["decision_time"]))
     print('Mean Squared Error: ', mean_squared_error(prediction, data["decision_time"]))
     print("RMSE: ", mean_squared_error(prediction, data["decision_time"])**0.5)
-    '''
     
+    
+    
+    #RG#2
+    '''
     linear_regression = linear_model.LinearRegression()
     linear_regression.fit(X=pd.DataFrame(data["decision_time"]), y= data["decision"])
     prediction = linear_regression.predict(X=pd.DataFrame(data["decision_time"]))
@@ -94,3 +99,4 @@ if __name__ == '__main__':
     print('score: ', linear_regression.score(X=pd.DataFrame(data["decision_time"]), y=data["decision"]))
     print('Mean Squared Error: ', mean_squared_error(prediction, data["decision"]))
     print("RMSE: ", mean_squared_error(prediction, data["decision"])**0.5)
+    '''
