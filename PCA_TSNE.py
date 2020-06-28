@@ -43,11 +43,13 @@ if __name__ == '__main__':
     pca_d = pcar.transform(X_scaled)
     
     plt.scatter(pca_d[:,0],pca_d[:,1])
+    plt.savefig('./pca.png', dpi=300)
     plt.show()
     
     tsne = TSNE(random_state=0)
     digits_tsne = tsne.fit_transform(X_scaled)
     plt.scatter(digits_tsne[:,0],digits_tsne[:,1])
+    plt.savefig('./tsne.png', dpi=300)
     plt.show()
     
     
